@@ -1,0 +1,333 @@
+<!DOCTYPE>
+<html>
+<head>
+  <title>SnowMan</title>
+</head>
+<body>
+  <div id="snow">
+  <div id='start'>
+    <p id="title">Snow Man</p>
+    <button class='button' id="startButt">Start</button>
+  </div>
+</div>
+  <!-- CSS -->
+  <style type="text/css">
+  body{
+    margin: auto;
+    text-align: center;
+    background-color:#333;
+  }
+  #title{
+    font-size: 60px;
+  }
+  #start{
+    margin: auto;
+    margin-top: 200px;
+    height: 200px;
+    width: 400px;
+    background-image: url('resources/start.jpg');
+    background-size: contain;
+    text-shadow: 2px 2px black;
+    color: gold;
+    text-align: center;
+    padding: 100px;
+    border-radius: 10px;
+  }
+  #snow{
+    background: none;
+    font-family: Androgyne;
+    background-image: url('http://www.wearewebstars.dk/codepen/img/s1.png'), url('http://www.wearewebstars.dk/codepen/img//s2.png'), url('http://www.wearewebstars.dk/codepen/img//s3.png');
+    height: 100%;
+    left: 0;
+    position: absolute;
+    top: 0;
+    width: 100%;
+    z-index:1;
+    animation: snow 10s linear infinite;
+  }
+  @keyframes snow {
+    0% {background-position: 0px 0px, 0px 0px, 0px 0px;}
+    50% {background-position: 500px 500px, 100px 200px, -100px 150px;}
+    100% {background-position: 500px 1000px, 200px 400px, -100px 300px;}
+  }
+  .button{
+    margin: auto;
+    text-align: center;
+    width: 100px;
+    height: 50px;
+    border-radius: 5px;
+    font-size: 20px;
+    outline: none;
+  }
+  .button:hover{
+    background-color: gray;
+  }
+  .button:active{
+    background-color: black;
+  }
+  </style>
+  <!-- JavaScript -->
+  <script type="text/javascript">
+  'use strict'
+
+  const FRAME_RATE = 30;
+  var game;
+  var running = false;
+  var startButt = document.getElementById("startButt");
+  var againButt;
+
+  window.addEventListener('load', setup);
+  //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  function setup(){
+    startButt.addEventListener('click', function(){
+      game = new Game();
+      running = true;
+      document.getElementById('snow').removeChild(document.getElementById('start'));
+      var contButt = document.createElement('button');
+      contButt.setAttribute('class', 'button');
+      contButt.innerHTML= 'Continue';
+      document.getElementById('snow').appendChild(contButt);
+      window.setTimeout(function(){
+        contButt.addEventListener('click', function(){
+          game.gameHost.x = 200;
+          game.gameHost.currentPhrase = 1;
+          game.gameHost.showLetterSpaces = true;
+          document.getElementById('snow').removeChild(contButt);
+        });
+      }, 1000);
+    });
+    againButt = document.createElement('button');
+    againButt.style.display = 'none';
+    againButt.setAttribute('class', 'button');
+    againButt.innerHTML= 'Again?';
+    document.getElementById('snow').appendChild(againButt);
+    againButt.addEventListener('click', function(){
+      location.reload();
+    });
+    window.setTimeout(draw, 100);
+  }
+
+  function draw(){
+    if(running){
+      game.context.clearRect(0, 0, game.canvas.width, game.canvas.height);
+      game.run();
+    }
+    window.setTimeout(draw, FRAME_RATE/1000);
+  }
+
+  function getUI(){
+    try{
+      game.gameHost.currentGuess = prompt("Guess a Letter:");
+      if(game.gameHost.currentGuess == null) throw "Please Enter A Guess";
+      if(game.gameHost.currentGuess.length > 1) throw "One Letter At A Time Please!";
+      game.gameHost.currentGuess = game.gameHost.currentGuess.toLowerCase();
+    }catch(e){
+      alert(e);
+    }
+    game.gameHost.checkGuess();
+  }
+  //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  class Game{
+    constructor(){
+      this.canvas = document.createElement('canvas');
+      this.canvas.setAttribute('width', window.innerWidth);
+      this.canvas.setAttribute('height', window.innerHeight - 200);
+      this.context = this.canvas.getContext('2d');
+      this.context.font = "30px Impact"
+      document.getElementById('snow').appendChild(this.canvas);
+      this.gameHost = new Host((window.innerWidth/2)-25, (window.innerHeight/2-25));
+      this.guessedLetters = new GuessedLetters(window.innerWidth - 400, 60);
+      this.snowman = new SnowMan(this);
+    }
+    run(){
+      this.guessedLetters.run();
+      this.gameHost.run();
+      this.snowman.run();
+      this.checkGameOver();
+    }
+    checkGameOver(){
+      if(this.gameHost.wrongGuesses.length < 6){
+        if(this.gameHost.won){
+          this.gameHost.currentPhrase = 5;
+          againButt.style.display = 'block';
+        }
+      }else{
+        this.gameHost.currentPhrase = 4;
+        this.gameHost.lost = true;
+        againButt.style.display = 'block';
+      }
+    }
+  }
+  //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  class SnowMan{
+    constructor(game){
+      this.img = document.createElement('img');
+      this.width = 240;
+      this.height = 300;
+    }
+    run(){
+      if(game.gameHost.showLetterSpaces){
+        this.img.src = "resources/"+(game.gameHost.wrongGuesses.length+1)+".png";
+        game.context.drawImage(this.img, window.innerWidth/2 - (this.width/2), window.innerHeight/2 - (this.height/2) - 100, this.width, this.height);
+      }
+    }
+  }
+  //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  class GuessedLetters{
+    constructor(x, y){
+      this.x = x;
+      this.y = y;
+    }
+    run(){
+      game.context.fillStyle = 'green';
+      game.context.fillRect(this.x, this.y, 300, 500);
+      game.context.fillStyle = 'white';
+      for(let i = 0; i < game.gameHost.wrongGuesses.length; i++){
+        game.context.fillText(game.gameHost.wrongGuesses[i], this. x + 125, this.y + (i*60) + 50, 50)
+      }
+    }
+  }
+  //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  class Host{
+    constructor(x, y){
+      this.x = x;
+      this.y = y;
+      this.won = false;
+      this.lost - false;
+      this.wordList = [
+        "apples",
+        "copper",
+        "explain",
+        "unite",
+        "truck",
+        "neat",
+        "decisive",
+        "notice",
+        "wobble",
+        "unattainable",
+        "snore",
+        "throat",
+        "debt",
+        "thought",
+        "supreme",
+        "gratis",
+        "poised",
+        "gutteral",
+        "yam",
+        "perpetual"
+      ];
+      this.currentWord = this.wordList[Math.round(Math.random()*20)];
+      this.wordLetter = this.currentWord.split('');
+      this.correctGuesses = [];
+      this.correctGuessesValues = [];
+      this.wrongGuesses = [];
+      this.guessing = true;
+      this.contains = false;
+      this.showLetterSpaces = false;
+      this.currentGuess = null;//Phrase #:[0]    [      1        ]  [                  2               ]  [        3        ] [     4     ]  [   5    ]  [6]
+      this.phrases = ["Let's play a word game!", "Guess a Letter:", "Yes! The word contains your guess!", "No. Try Again...", "You Lost :(", "You Won!", "You Already Guessed That..."];
+      this.currentPhrase = 0;
+      this.w = 100;
+      this.h = 200;
+      this.img = document.createElement('img');
+      this.img.src = "resources/bear.jpg";
+      //+++++++++++++++++++++++Set up stuff
+      for(let i = 0; i < this.wordLetter.length; i++){
+        this.correctGuesses.push(new LetterSpace(i, '-'));
+        this.correctGuessesValues.push('-');
+      }
+    }
+    run(){
+      game.context.fillStyle = 'red';
+      game.context.drawImage(this.img, this.x, this.y, this.w, this.h);
+      game.context.fillStyle = 'gold';
+      game.context.fillText(this.phrases[this.currentPhrase], this.x - 100, this.y - 35);
+
+      if(this.showLetterSpaces){
+        this.correctCount = 0;
+        for(let i = 0; i < this.correctGuesses.length; i++){
+          this.correctGuesses[i].run();
+          if(this.correctGuessesValues[i] == this.wordLetter[i]) this.correctCount++;
+        }
+        if(this.correctCount == this.wordLetter.length){
+          this.guessing = false;
+          this.won = true;
+        }
+      }
+
+      if(this.guessing && !this.won && !this.lost){
+        switch(this.currentPhrase){
+          case 1:
+          window.setTimeout(getUI, 100);
+          this.guessing = false;
+          break;
+
+          case 2:
+          window.setTimeout(function(){
+            this.currentPhrase = 1;
+          }, 1000);
+          break;
+        }
+      }
+    }
+    checkGuess(){
+      if(this.currentGuess != null && this.currentGuess.length === 1){
+        if(this.currentWord.includes(this.currentGuess)){
+          this.currentPhrase = 2;
+          window.setTimeout(function(){
+            game.gameHost.currentPhrase = 1;
+            game.gameHost.contains = true;
+            game.gameHost.saveGuess();
+            game.gameHost.guessing = true;
+          }, 1000);
+        }else{
+          if(!this.wrongGuesses.includes(this.currentGuess)){
+            this.wrongGuesses.push(this.currentGuess);
+            this.currentPhrase = 3;
+            window.setTimeout(function(){
+              game.gameHost.currentPhrase = 1;
+              game.gameHost.guessing = true;
+              game.gameHost.contains = false;
+            }, 1000);
+          }else{
+            this.currentPhrase = 6;
+            window.setTimeout(function(){
+              game.gameHost.currentPhrase = 1;
+              game.gameHost.guessing = true;
+              game.gameHost.contains = false;
+            }, 1000);
+          }
+        }
+      }else{
+        game.gameHost.currentPhrase = 1;
+        game.gameHost.guessing = true;
+        game.gameHost.contains = false;
+      }
+    }
+    saveGuess(){
+      if(this.contains){
+        for(let i = 0; i < this.wordLetter.length; i++){
+          if(this.currentGuess == this.wordLetter[i]){
+            this.correctGuesses[i].value = this.wordLetter[i];
+            this.correctGuessesValues[i] = this.wordLetter[i];
+          }
+        }
+      }
+    }
+  }
+  //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  class LetterSpace{
+    constructor(index, value){
+      this.index = index;
+      this.value = value;
+    }
+    run(){
+      game.context.fillStyle = 'black';
+      game.context.fillRect((this.index*60)+((window.innerWidth/2) - ((game.gameHost.wordLetter.length*60)/2)), 500, 50, 50);
+      game.context.fillStyle = "White";
+      game.context.fillText(this.value, (this.index*60)+((window.innerWidth/2) - ((game.gameHost.wordLetter.length*60)/2)) + 20, 530, 50);
+    }
+  }
+  </script>
+</body>
+</html>
