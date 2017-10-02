@@ -1,13 +1,16 @@
 <!DOCTYPE>
 <html>
 <head>
-  <title>SnowMan</title>
+  <title>SnowMane</title>
+  <link rel='icon' type='icon/ico' href='resources/snowman.ico'>
 </head>
 <body>
+  <audio id = "bgmusic" src='resources/background.mp3' autoplay = 'true' loop = 'true'></audio>
   <div id="snow">
   <div id='start'>
-    <p id="title">Snow Man</p>
+    <p id="title">Snow-Mane</p>
     <button class='button' id="startButt">Start</button>
+    <button id="mute"></button>
   </div>
 </div>
   <!-- CSS -->
@@ -18,6 +21,9 @@
     background-color:#333;
   }
   #title{
+    animation: colorchange2 6s linear infinite;
+    color: lightblue;
+    font-family: snowFont;
     font-size: 60px;
   }
   #start{
@@ -25,13 +31,29 @@
     margin-top: 200px;
     height: 200px;
     width: 400px;
-    background-image: url('resources/start.jpg');
-    background-size: contain;
+    background-color: white;
+    animation: colorchange 6s linear infinite;
     text-shadow: 2px 2px black;
     color: gold;
     text-align: center;
     padding: 100px;
-    border-radius: 10px;
+    border-radius: 50px;
+  }
+  #mute{
+    margin: auto;
+    position: relative;
+    left: 100px;
+    top: -45px;
+    background-color: white;
+    background-image: url('resources/mute.ico');
+    background-position: center;
+    background-size: contain;
+    outline: none;
+    border-radius: 50%;
+    height: 30px;
+    width: 30px;
+    display: block;
+    border: 1px solid black;
   }
   #snow{
     background: none;
@@ -49,6 +71,20 @@
     0% {background-position: 0px 0px, 0px 0px, 0px 0px;}
     50% {background-position: 500px 500px, 100px 200px, -100px 150px;}
     100% {background-position: 500px 1000px, 200px 400px, -100px 300px;}
+  }
+  @keyframes colorchange {
+    0% {background-color: white;}
+    50% {background-color: lightblue;}
+    100% {background-color: white;}
+  }
+  @keyframes colorchange2 {
+    0% {color: blue;}
+    50% {color: white;}
+    100% {color: blue;}
+  }
+  @font-face {
+    font-family: 'snowFont';
+    src: url("resources/Snow.ttf");
   }
   .button{
     margin: auto;
@@ -75,8 +111,22 @@
   var running = false;
   var startButt = document.getElementById("startButt");
   var againButt;
+  var endSong = document.createElement('audio');
+  var mute = document.getElementById('mute');
+  var bgmusic = document.getElementById('bgmusic');
+  endSong.src = 'resources/stbrick.mp3';
+  endSong.setAttribute("loop", 'true');
 
   window.addEventListener('load', setup);
+  mute.addEventListener('click', function(){
+    if(bgmusic.paused){
+      bgmusic.play();
+      mute.style.backgroundColor = 'white';
+    }else{
+      bgmusic.pause();
+      mute.style.backgroundColor = 'gray';
+    }
+  });
   //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   function setup(){
     startButt.addEventListener('click', function(){
@@ -87,22 +137,24 @@
       contButt.setAttribute('class', 'button');
       contButt.innerHTML= 'Continue';
       document.getElementById('snow').appendChild(contButt);
+      game.gameHost.audio.src = game.gameHost.audiosrc[0];
+      game.gameHost.audio.play();
       window.setTimeout(function(){
         contButt.addEventListener('click', function(){
           game.gameHost.x = 200;
           game.gameHost.currentPhrase = 1;
           game.gameHost.showLetterSpaces = true;
           document.getElementById('snow').removeChild(contButt);
+          againButt = document.createElement('button');
+          againButt.style.display = 'none';
+          againButt.setAttribute('class', 'button');
+          againButt.innerHTML= 'Again?';
+          document.getElementById('snow').appendChild(againButt);
+          againButt.addEventListener('click', function(){
+            location.reload();
+          });
         });
       }, 1000);
-    });
-    againButt = document.createElement('button');
-    againButt.style.display = 'none';
-    againButt.setAttribute('class', 'button');
-    againButt.innerHTML= 'Again?';
-    document.getElementById('snow').appendChild(againButt);
-    againButt.addEventListener('click', function(){
-      location.reload();
     });
     window.setTimeout(draw, 100);
   }
@@ -122,7 +174,9 @@
       if(game.gameHost.currentGuess.length > 1) throw "One Letter At A Time Please!";
       game.gameHost.currentGuess = game.gameHost.currentGuess.toLowerCase();
     }catch(e){
-      alert(e);
+      game.gameHost.audio.src = game.gameHost.audiosrc[3];
+      game.gameHost.audio.play();
+      window.setTimeout(function(){alert(e)}, 100);
     }
     game.gameHost.checkGuess();
   }
@@ -131,7 +185,7 @@
     constructor(){
       this.canvas = document.createElement('canvas');
       this.canvas.setAttribute('width', window.innerWidth);
-      this.canvas.setAttribute('height', window.innerHeight - 200);
+      this.canvas.setAttribute('height', window.innerHeight-100);
       this.context = this.canvas.getContext('2d');
       this.context.font = "30px Impact"
       document.getElementById('snow').appendChild(this.canvas);
@@ -148,13 +202,17 @@
     checkGameOver(){
       if(this.gameHost.wrongGuesses.length < 6){
         if(this.gameHost.won){
+          document.body.removeChild(document.getElementById('bgmusic'));
           this.gameHost.currentPhrase = 5;
           againButt.style.display = 'block';
+          endSong.play();
         }
       }else{
+        document.body.removeChild(document.getElementById('bgmusic'));
         this.gameHost.currentPhrase = 4;
         this.gameHost.lost = true;
         againButt.style.display = 'block';
+        endSong.play();
       }
     }
   }
@@ -193,7 +251,7 @@
       this.x = x;
       this.y = y;
       this.won = false;
-      this.lost - false;
+      this.lost = false;
       this.wordList = [
         "apples",
         "copper",
@@ -224,13 +282,22 @@
       this.guessing = true;
       this.contains = false;
       this.showLetterSpaces = false;
-      this.currentGuess = null;//Phrase #:[0]    [      1        ]  [                  2               ]  [        3        ] [     4     ]  [   5    ]  [6]
-      this.phrases = ["Let's play a word game!", "Guess a Letter:", "Yes! The word contains your guess!", "No. Try Again...", "You Lost... The Word Was: "+this.currentWord.toUpperCase()+"", "You Won!", "You Already Guessed That..."];
+      this.currentGuess = null;//Phrase #:[0]    [      1        ]  [                  2               ]  [        3        ] [             4            ]  [   5    ]  [            6               ]
+      this.phrases = ["Let's play a word game!", "Guess a Letter:", "Yes! The word contains your guess!", "No. Try Again...", "You Lost... The Word Was: ", "You Won!", "You Already Guessed That..."];
       this.currentPhrase = 0;
-      this.w = 100;
-      this.h = 200;
+      this.w = 200;
+      this.h = 300;
       this.img = document.createElement('img');
-      this.img.src = "resources/bear.jpg";
+      this.img.src = "resources/gucci.png";
+      this.audio = document.createElement('audio');
+      this.currentAudio = 0;
+      this.audiosrc = [
+        "resources/gucci.mp3",
+        "resources/yeah.mp3",
+        "resources/burr.mp3",
+        'resources/damn.mp3',
+        'resources/huh.mp3'
+      ];
       //+++++++++++++++++++++++Set up stuff
       for(let i = 0; i < this.wordLetter.length; i++){
         this.correctGuesses.push(new LetterSpace(i, '-'));
@@ -241,7 +308,12 @@
       game.context.fillStyle = 'red';
       game.context.drawImage(this.img, (this.x+25) - this.w/2, (this.y+25) - this.h/2, this.w, this.h);
       game.context.fillStyle = 'gold';
-      game.context.fillText(this.phrases[this.currentPhrase], this.x - 80, this.y - 100);
+      game.context.fillText(this.phrases[this.currentPhrase], this.x - 80, this.y - 150);
+      if(this.lost){
+        game.context.fillStyle = 'red';
+        game.context.font = '40px impact'
+        game.context.fillText(this.currentWord.toUpperCase(), this.x+240, this.y - 150);
+      }
 
       if(this.showLetterSpaces){
         this.correctCount = 0;
@@ -273,23 +345,40 @@
     checkGuess(){
       if(this.currentGuess != null && this.currentGuess.length === 1){
         if(this.currentWord.includes(this.currentGuess)){
-          this.currentPhrase = 2;
-          window.setTimeout(function(){
-            game.gameHost.currentPhrase = 1;
-            game.gameHost.contains = true;
-            game.gameHost.saveGuess();
-            game.gameHost.guessing = true;
-          }, 1000);
-        }else{
-          if(!this.wrongGuesses.includes(this.currentGuess)){
-            this.wrongGuesses.push(this.currentGuess);
-            this.currentPhrase = 3;
+          if(this.correctGuessesValues.includes(this.currentGuess)){
+            this.audio.src = this.audiosrc[4];
+            this.audio.play();
+            this.currentPhrase = 6;
             window.setTimeout(function(){
               game.gameHost.currentPhrase = 1;
               game.gameHost.guessing = true;
               game.gameHost.contains = false;
             }, 1000);
           }else{
+            this.currentPhrase = 2;
+            game.gameHost.audio.src = game.gameHost.audiosrc[1];
+            game.gameHost.audio.play();
+            window.setTimeout(function(){
+              game.gameHost.currentPhrase = 1;
+              game.gameHost.contains = true;
+              game.gameHost.saveGuess();
+              game.gameHost.guessing = true;
+            }, 1000);
+          }
+        }else{
+          if(!this.wrongGuesses.includes(this.currentGuess)){
+            this.wrongGuesses.push(this.currentGuess);
+            this.currentPhrase = 3;
+            game.gameHost.audio.src = game.gameHost.audiosrc[2];
+            game.gameHost.audio.play();
+            window.setTimeout(function(){
+              game.gameHost.currentPhrase = 1;
+              game.gameHost.guessing = true;
+              game.gameHost.contains = false;
+            }, 1000);
+          }else{
+            this.audio.src = this.audiosrc[4];
+            this.audio.play();
             this.currentPhrase = 6;
             window.setTimeout(function(){
               game.gameHost.currentPhrase = 1;
@@ -323,8 +412,8 @@
     }
     run(){
       game.context.fillStyle = 'black';
-      game.context.fillRect((this.index*60)+((window.innerWidth/2) - ((game.gameHost.wordLetter.length*60)/2)), 500, 50, 50);
-      game.context.fillStyle = "White";
+      game.context.fillRect((this.index*60)+((window.innerWidth/2) - ((game.gameHost.wordLetter.length*60)/2)), 495, 50, 50);
+      game.context.fillStyle = "white";
       game.context.fillText(this.value, (this.index*60)+((window.innerWidth/2) - ((game.gameHost.wordLetter.length*60)/2)) + 20, 530, 50);
     }
   }
