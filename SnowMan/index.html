@@ -412,9 +412,9 @@
     }
     run(){
       game.context.fillStyle = 'black';
-      game.context.fillRect((this.index*60)+((window.innerWidth/2) - ((game.gameHost.wordLetter.length*60)/2)), 495, 50, 50);
+      game.context.fillRect((this.index*60)+((window.innerWidth/2) - ((game.gameHost.wordLetter.length*60)/2)), game.canvas.height - 100, 50, 50);
       game.context.fillStyle = "white";
-      game.context.fillText(this.value, (this.index*60)+((window.innerWidth/2) - ((game.gameHost.wordLetter.length*60)/2)) + 20, 530, 50);
+      game.context.fillText(this.value, (this.index*60)+((window.innerWidth/2) - ((game.gameHost.wordLetter.length*60)/2)) + 20, game.canvas.height - 65, 50);
     }
   }
   </script>
